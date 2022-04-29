@@ -22,6 +22,9 @@ class NhmConfigExtensionException(NhmConfigException):
 
 
 class BaseInfoException(Exception):
+    """
+    异常信息统一基类
+    """
     def __init__(self, error: str):
         self.__error = error
 
@@ -31,6 +34,20 @@ class BaseInfoException(Exception):
 
     def __str__(self):
         return f"当前错误对象: {self.error}"
+
+
+class ConfigKeyMustBeStr(NhmConfigException):
+    """
+    配置键必须为字符串类型
+    """
+
+
+class NoSuchConfigException(NhmConfigException, BaseInfoException):
+    """
+    没有找到对应配置
+    """
+    def __str__(self):
+        return f"未找到此配置: {self.error}"
 
 
 class NoEnvError(NhmConfigException, BaseInfoException):

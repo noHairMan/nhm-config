@@ -13,7 +13,8 @@ from pprint import pformat
 from typing import Type, Any
 
 from nhm_config.env import EnvMapping
-from nhm_config.exception import NoConfigFileError, NoEnvError, ConfigTypeError
+from nhm_config.exception import NoConfigFileError, NoEnvError, ConfigTypeError, NoSuchConfigException, \
+    ConfigKeyMustBeStr
 from nhm_config.extensions.core.interface import ConfigExtensionAbc
 from nhm_config.logger import get_logger
 
@@ -22,13 +23,28 @@ CONFIG_BASE_PATH = os.path.join(os.getcwd(), "configs")
 __logger = get_logger("ConfigManager")
 
 
+class ConfigDict(dict):
+    """
+    配置类字典，为了自定义缺省异常定义
+    """
+    def __setitem__(self, key, value):
+        if not isinstance(key, str):
+            raise ConfigKeyMustBeStr
+        super(ConfigDict, self).__setitem__(key.upper(), value)
+
+    def __missing__(self, key: str):
+        if not key.isupper():
+            return self[key.upper()]
+        raise NoSuchConfigException(key)
+
+
 class DictSection:
     """
     配置管理
     """
 
     def __init__(self, configs: dict = None):
-        self.__config = configs or {}
+        self.__config = ConfigDict(configs) if configs else ConfigDict()
 
     def __repr__(self):
         return str(self.__config)
@@ -65,7 +81,7 @@ class DictSection:
         self.__config[key] = value
 
     def __getitem__(self, item) -> Any:
-        return self.get(item)
+        return self.__config[item]
 
     def __setitem__(self, key, value):
         self.set(key, value)
@@ -82,6 +98,18 @@ def load_config(parser: ConfigParser) -> dict:
 
 
 def get_config(*, env: str = None, env_name: str = "NHM_ENV", env_mapping: Type[EnvMapping] = EnvMapping) -> dict:
+    """
+    使用标准库configparser解析ini文件
+
+    :param env: 指定当前使用的环境项，当同时配置了 环境变量指定 和 指定此参数 时，优先使用此参数指定的环境项
+    :type env: str
+    :param env_name: 当前使用的环境变量名称
+    :type env_name: str
+    :param env_mapping: 配置文件项，如需新增多套环境配置，请继承实现此类
+    :type env_mapping: Type[nhm_config.env.EnvMapping]
+    :return: 所有ini配置文件中的配置项
+    :rtype: dict
+    """
     environment = env if env else os.environ.get(env_name) or "development"
     environment = environment.lower()
 
@@ -110,9 +138,20 @@ def cast(_type, value):
 
 
 class ConfigManager:
+    """
+    配置管理类客户端
+    """
     __logger = get_logger("ConfigManager")
 
     def __init__(self, env: str = None, env_name: str = "NHM_ENV", env_mapping: Type[EnvMapping] = EnvMapping):
+        """
+        初始化管理客户端，根据指定环境项从配置文件中加载配置，
+        未指定环境项时，默认加载 development 环境
+
+        :param env: same to method `get_config`
+        :param env_name: same to method `get_config`
+        :param env_mapping: same to method `get_config`
+        """
         super(ConfigManager, self).__init__()
         self.__config = get_config(env=env, env_name=env_name, env_mapping=env_mapping)
         self.__logger.debug(pformat(self.__config))

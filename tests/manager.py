@@ -32,6 +32,9 @@ def test_config_manager():
         }
 
     manager = ConfigManager(env="development", env_mapping=MyEnvMapping)
+    print(manager["base"]["DEBUG"])
+    print(manager["base"]["debug1"])
+    breakpoint()
     assert manager["nacos"].get_string("namespace") == "a24a222f-6a1a-457d-90d0-9e7665f5eb77"
     assert manager["base"].get_boolean("debug") is True
     assert manager["base"].get("no_such_key", 123) == 123

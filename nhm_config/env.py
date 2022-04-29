@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    $END$
+    ini格式配置文件映射，每个多余的环境，请继承EnvMapping并添加响应配置，在创建配置客户端时候，将拓展的mapping传参到init方法中
     
     @Time : 2022/4/27 16:21
     @Author : noHairMan

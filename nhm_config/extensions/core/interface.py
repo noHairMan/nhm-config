@@ -19,6 +19,8 @@ class ConfigExtensionAbc(ABC):
     def __init__(self, manager):
         """
         初始化
+        :param manager: 配置管理类客户端
+        :type manager: nhm_config.manager.ConfigManager
         """
 
     @abstractmethod
