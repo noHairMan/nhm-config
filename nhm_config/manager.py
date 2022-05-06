@@ -10,7 +10,7 @@
 import os
 from configparser import ConfigParser
 from pprint import pformat
-from typing import Type, Any
+from typing import Type, Any, Optional, overload, Union
 
 from nhm_config.env import EnvMapping
 from nhm_config.exception import NoConfigFileError, NoEnvError, ConfigTypeError, NoSuchConfigException, \
@@ -27,6 +27,16 @@ class ConfigDict(dict):
     """
     配置类字典，为了自定义缺省异常定义
     """
+    def __init__(self, *args, **kwargs):
+        super(ConfigDict, self).__init__(*args, **kwargs)
+        self.__section_name: str = ""
+
+    def set_section_name(self, section_name: str):
+        self.__section_name = section_name.upper()
+
+    def get(self, key, default):
+        return super().get(key.upper(), default)
+
     def __setitem__(self, key, value):
         if not isinstance(key, str):
             raise ConfigKeyMustBeStr
@@ -35,7 +45,7 @@ class ConfigDict(dict):
     def __missing__(self, key: str):
         if not key.isupper():
             return self[key.upper()]
-        raise NoSuchConfigException(key)
+        raise NoSuchConfigException([self.__section_name, key])
 
 
 class DictSection:
@@ -43,8 +53,9 @@ class DictSection:
     配置管理
     """
 
-    def __init__(self, configs: dict = None):
+    def __init__(self, section_name: str = None, configs: dict = None):
         self.__config = ConfigDict(configs) if configs else ConfigDict()
+        self.__config.set_section_name(section_name)
 
     def __repr__(self):
         return str(self.__config)
@@ -86,14 +97,17 @@ class DictSection:
     def __setitem__(self, key, value):
         self.set(key, value)
 
+    def __getattr__(self, item):
+        return self[item]
+
 
 def load_config(parser: ConfigParser) -> dict:
     config = {}
     for section in parser.sections():
-        item = DictSection()
+        item = DictSection(section_name=section)
         for option in parser.options(section):
-            item[option] = parser.get(section, option)
-        config[section] = item
+            item[option.upper()] = parser.get(section, option)
+        config[section.upper()] = item
     return config
 
 
@@ -156,14 +170,11 @@ class ConfigManager:
         self.__config = get_config(env=env, env_name=env_name, env_mapping=env_mapping)
         self.__logger.debug(pformat(self.__config))
 
-    def get(self, key: str):
-        return self.__config.get(key, DictSection())
-
     def __getitem__(self, item):
-        return self.get(item)
+        return self.__config.get(section_name := item.upper(), DictSection(section_name))
 
     def __setitem__(self, key, value):
-        self.__config[key] = value
+        self.__config[key.upper()] = value
 
     def configs(self):
         return self.__config
@@ -171,3 +182,7 @@ class ConfigManager:
     def add_extension(self, extension_class: Type[ConfigExtensionAbc]):
         extension = extension_class(self)
         extension.load_config()
+
+    def __getattr__(self, item):
+        return self[item]
+

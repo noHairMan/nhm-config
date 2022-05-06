@@ -76,4 +76,4 @@ class NacosConfigExtension(BaseConfigExtension):
                     raise NacosConfigDecodeError(data)
                 self.__logger.warning(NacosConfigDecodeError(data))
                 continue
-            self.__manager[data["dataId"]] = DictSection(config)
+            self.__manager[data["dataId"]] = DictSection(data["dataId"], config)

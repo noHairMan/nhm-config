@@ -7,6 +7,7 @@
     @File : exception.py
     @Project : nhm-config
 """
+from typing import Any
 
 
 class NhmConfigException(Exception):
@@ -25,7 +26,7 @@ class BaseInfoException(Exception):
     """
     异常信息统一基类
     """
-    def __init__(self, error: str):
+    def __init__(self, error: Any):
         self.__error = error
 
     @property
@@ -47,7 +48,7 @@ class NoSuchConfigException(NhmConfigException, BaseInfoException):
     没有找到对应配置
     """
     def __str__(self):
-        return f"未找到此配置: {self.error}"
+        return f"未找到此配置: [{self.error[0]}].{self.error[1]}"
 
 
 class NoEnvError(NhmConfigException, BaseInfoException):

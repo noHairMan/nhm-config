@@ -33,15 +33,21 @@ def test_config_manager():
 
     manager = ConfigManager(env="development", env_mapping=MyEnvMapping)
     print(manager["base"]["DEBUG"])
-    print(manager["base"]["debug1"])
-    breakpoint()
+    print(manager.base)
+    print(manager.BASE)
+    print(manager.BASE.DEBUG)
+    print(manager.base.DEBUG)
+    print(manager.base.debug)
+    print(manager["base"]["debug"])
     assert manager["nacos"].get_string("namespace") == "a24a222f-6a1a-457d-90d0-9e7665f5eb77"
     assert manager["base"].get_boolean("debug") is True
     assert manager["base"].get("no_such_key", 123) == 123
     assert manager["no_such_key"].get("no_such_key") is None
-    assert manager["no_such_key"]["no_such_key"] is None
+    # assert manager["no_such_section"]["no_such_key"] is None
+    # assert manager["config.patent"]["no_such_key"] is None
     manager.add_extension(NacosConfigExtension)
     print(pformat(manager.configs()))
+    breakpoint()
 
 
 # assert test_get_config_parser() is not None
